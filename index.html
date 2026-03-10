@@ -1,0 +1,891 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+  <title>Ezze's Ark</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+    body{background:#020B12;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Helvetica Neue',Arial,sans-serif;-webkit-font-smoothing:antialiased;}
+    ::-webkit-scrollbar{width:3px;height:3px;}
+    ::-webkit-scrollbar-track{background:#030E18;}
+    ::-webkit-scrollbar-thumb{background:#0D3A50;border-radius:2px;}
+    @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+    @keyframes glow{0%,100%{opacity:.5}50%{opacity:1}}
+    @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
+    @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+    @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+    .fu{animation:fadeUp .35s ease forwards;}
+    .skeleton{background:linear-gradient(90deg,#0A1E2E 25%,#0D2A3A 50%,#0A1E2E 75%);background-size:200% 100%;animation:shimmer 1.6s infinite;}
+    button,input{font-family:inherit;-webkit-appearance:none;}
+    input:focus{outline:none;}
+  </style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState,useEffect,useRef} = React;
+
+// Image generation handled by Pollinations.ai — no API key required
+
+/* ── LOCAL IMAGE MAP — add more as you grow your /images/ folder ── */
+const LOCAL_IMAGES = {
+  // CHEST
+  "barbell bench press":        "images/barbell-bench-press.png",
+  "incline dumbbell press":     "images/incline-dumbbell-press.png",
+  "cable flyes":                "images/cable-flyes.png",
+  "dips (chest-forward lean)":  "images/dips-chest-forward-lean.png",
+  "dumbbell flat press":        "images/dumbbell-flat-press.png",
+  "pec deck machine":           "images/pec-deck-machine.png",
+  "push-up superset":           "images/push-up-superset.png",
+  "landmine press":             "images/landmine-press.png",
+  "flat bench press (heavy)":   "images/flat-bench-press-heavy.png",
+  "incline cable flyes":        "images/incline-cable-flyes.png",
+  "push-up drop set":           "images/push-up-drop-set.png",
+  "chest press machine":        "images/chest-press-machine.png",
+  // BACK
+  "deadlift":                   "images/deadlift.png",
+  "wide-grip pull-up":          "images/wide-grip-pull-up.png",
+  "bent-over barbell row":      "images/bent-over-barbell-row.png",
+  "seated cable row":           "images/seated-cable-row.png",
+  "lat pulldown":               "images/lat-pulldown.png",
+  "single-arm db row":          "images/single-arm-db-row.png",
+  "straight-arm pulldown":      "images/straight-arm-pulldown.png",
+  "meadows row":                "images/meadows-row.png",
+  "romanian deadlift":          "images/romanian-deadlift.png",
+  "t-bar row":                  "images/t-bar-row.png",
+  "face pulls":                 "images/face-pulls.png",
+  "hyperextensions":            "images/hyperextensions.png",
+  // BICEPS
+  "barbell curl":               "images/barbell-curl.png",
+  "hammer curl":                "images/hammer-curl.png",
+  "incline db curl":            "images/incline-db-curl.png",
+  "concentration curl":         "images/concentration-curl.png",
+  "preacher curl":              "images/preacher-curl.png",
+  "cable curl (low pulley)":    "images/cable-curl-low-pulley.png",
+  "zottman curl":               "images/zottman-curl.png",
+  "spider curl":                "images/spider-curl.png",
+  "21s barbell curl":           "images/21s-barbell-curl.png",
+  "cross-body hammer curl":     "images/cross-body-hammer-curl.png",
+  "cable rope hammer curl":     "images/cable-rope-hammer-curl.png",
+  "reverse curl":               "images/reverse-curl.png",
+  // TRICEPS
+  "close-grip bench press":     "images/close-grip-bench-press.png",
+  "overhead tricep extension":  "images/overhead-tricep-extension.png",
+  "tricep pushdown (rope)":     "images/tricep-pushdown-rope.png",
+  "bench dip":                  "images/bench-dip.png",
+  "skull crusher":              "images/skull-crusher.png",
+  "overhead cable extension":   "images/overhead-cable-extension.png",
+  "incline db kickback":        "images/incline-db-kickback.png",
+  "tate press":                 "images/tate-press.png",
+  "weighted dips":              "images/weighted-dips.png",
+  "cable pushdown + overhead":  "images/cable-pushdown-overhead.png",
+  "diamond push-ups":           "images/diamond-push-ups.png",
+  "single-arm pushdown":        "images/single-arm-pushdown.png",
+  // SHOULDERS
+  "barbell overhead press":     "images/barbell-overhead-press.png",
+  "dumbbell lateral raise":     "images/dumbbell-lateral-raise.png",
+  "rear delt fly":              "images/rear-delt-fly.png",
+  "arnold press":               "images/arnold-press.png",
+  "cable lateral raise":        "images/cable-lateral-raise.png",
+  "upright row":                "images/upright-row.png",
+  "front raise":                "images/front-raise.png",
+  "seated db shoulder press":   "images/seated-db-shoulder-press.png",
+  "push press":                 "images/push-press.png",
+  "lateral raise drop set":     "images/lateral-raise-drop-set.png",
+  "face pull":                  "images/face-pull.png",
+  "plate front raise":          "images/plate-front-raise.png",
+  // ABS
+  "crunches":                   "images/crunches.png",
+  "leg raises":                 "images/leg-raises.png",
+  "plank hold":                 "images/plank-hold.png",
+  "mountain climbers":          "images/mountain-climbers.png",
+  "bicycle crunches":           "images/bicycle-crunches.png",
+  "hanging knee raises":        "images/hanging-knee-raises.png",
+  "russian twists":             "images/russian-twists.png",
+  "ab wheel rollout":           "images/ab-wheel-rollout.png",
+  "dragon flag":                "images/dragon-flag.png",
+  "cable crunch":               "images/cable-crunch.png",
+  "windshield wipers":          "images/windshield-wipers.png",
+  "hollow body hold":           "images/hollow-body-hold.png",
+  // LEGS
+  "back squat":                 "images/back-squat.png",
+  "leg press":                  "images/leg-press.png",
+  "bulgarian split squat":      "images/bulgarian-split-squat.png",
+  "leg extension":              "images/leg-extension.png",
+  "lying leg curl":             "images/lying-leg-curl.png",
+  "hip thrust (barbell)":       "images/hip-thrust-barbell.png",
+  "good mornings":              "images/good-mornings.png",
+  "front squat":                "images/front-squat.png",
+  "hack squat":                 "images/hack-squat.png",
+  "walking lunges":             "images/walking-lunges.png",
+  "standing calf raise":        "images/standing-calf-raise.png",
+};
+
+function getLocalImage(exerciseName){
+  return LOCAL_IMAGES[exerciseName.toLowerCase()]||null;
+}
+
+const SPLIT = {
+  1:{label:"Monday",   short:"MON", emoji:"💪", muscles:["chest"],                        color:"#1E90FF"},
+  2:{label:"Tuesday",  short:"TUE", emoji:"🏋️", muscles:["back"],                         color:"#00C896"},
+  3:{label:"Wednesday",short:"WED", emoji:"🦵", muscles:["legs"],                         color:"#0AFFD4"},
+  5:{label:"Friday",   short:"FRI", emoji:"🔥", muscles:["shoulders","biceps","triceps"],  color:"#4FC3F7"},
+  6:{label:"Saturday", short:"SAT", emoji:"⚡", muscles:["abs"],                          color:"#FF7B2C"},
+};
+
+const EQ = {
+  barbell:   {label:"Barbell",       icon:"🏋️"},
+  dumbbell:  {label:"Dumbbell",      icon:"⚖️"},
+  cable:     {label:"Cable Machine", icon:"🔗"},
+  machine:   {label:"Machine",       icon:"⚙️"},
+  bodyweight:{label:"Bodyweight",    icon:"🤸"},
+  bench:     {label:"Bench",         icon:"🛋️"},
+  pullupbar: {label:"Pull-Up Bar",   icon:"📊"},
+  abwheel:   {label:"Ab Wheel",      icon:"⭕"},
+};
+
+function getEquipment(n){
+  const s=n.toLowerCase();
+  if(s.includes('ab wheel')) return ['abwheel'];
+  if(s.includes('pull-up')||s.includes('pullup')||s.includes('chin')||s.includes('hanging')||s.includes('windshield')) return ['pullupbar'];
+  if(s.includes('cable')) return ['cable'];
+  if(s.includes('machine')||s.includes('pec deck')||s.includes('leg press')||s.includes('leg extension')||s.includes('leg curl')||s.includes('hack squat')) return ['machine'];
+  if(s.includes('hip thrust')) return ['barbell','bench'];
+  if((s.includes('bench press')||s.includes('skull')||s.includes('close-grip')||s.includes('flat bench'))&&!s.includes('dumbbell')&&!s.includes('push-up')) return ['barbell','bench'];
+  if((s.includes('incline')||s.includes('preacher')||s.includes('spider'))&&(s.includes('dumbbell')||s.includes('db')||s.includes('curl')||s.includes('fly')||s.includes('kickback'))) return ['dumbbell','bench'];
+  if(s.includes('barbell')||s.includes('deadlift')||s.includes('good morning')||s.includes('romanian')||s.includes('t-bar')||s.includes('meadows')||s.includes('push press')||s.includes('landmine')) return ['barbell'];
+  if(s.includes('dumbbell')||s.includes('hammer')||s.includes('concentration')||s.includes('zottman')||s.includes('arnold')||s.includes('lateral raise')||s.includes('front raise')||s.includes('rear delt')||s.includes('tate')||s.includes('kickback')||s.includes('cross-body')) return ['dumbbell'];
+  if(s.includes('dip')||s.includes('push-up')||s.includes('pushup')||s.includes('plank')||s.includes('mountain')||s.includes('hollow')||s.includes('dragon')||s.includes('bicycle')||s.includes('crunch')&&!s.includes('cable')||s.includes('russian')) return ['bodyweight'];
+  return ['dumbbell'];
+}
+
+function buildPrompt(exerciseName){
+  const n=exerciseName.toLowerCase();
+  let view="side view";
+  if(n.includes('lateral raise')||n.includes('front raise')||n.includes('rear delt')||n.includes('upright row')||n.includes('fly')||n.includes('pec deck')) view="front view";
+  let equipment="";
+  if(n.includes('bench press')&&!n.includes('dumbbell')) equipment="lying on a flat bench pressing a loaded barbell,";
+  else if(n.includes('incline')&&n.includes('press')) equipment="lying on an inclined bench pressing dumbbells,";
+  else if(n.includes('deadlift')&&!n.includes('romanian')) equipment="standing over a loaded barbell on the floor,";
+  else if(n.includes('romanian')) equipment="standing holding a barbell at hip height,";
+  else if(n.includes('squat')&&!n.includes('hack')&&!n.includes('bulgarian')) equipment="under a loaded barbell in squat rack,";
+  else if(n.includes('hack squat')) equipment="in a hack squat machine,";
+  else if(n.includes('pull-up')||n.includes('chin')) equipment="hanging from a pull-up bar,";
+  else if(n.includes('dip')) equipment="on parallel dip bars,";
+  else if(n.includes('push-up')) equipment="in push-up position on the floor,";
+  else if(n.includes('plank')) equipment="in forearm plank position on the floor,";
+  else if(n.includes('cable')) equipment="at a cable machine,";
+  else if(n.includes('machine')||n.includes('leg press')||n.includes('leg extension')||n.includes('leg curl')) equipment="seated on a gym machine,";
+  else if(n.includes('hip thrust')) equipment="with upper back on a bench barbell across hips,";
+  else if(n.includes('dumbbell')||n.includes('hammer')||n.includes('lateral')||n.includes('kickback')||n.includes('zottman')||n.includes('concentration')||n.includes('arnold')||n.includes('tate')) equipment="holding dumbbells,";
+  else if(n.includes('barbell')||n.includes('row')) equipment="holding a barbell,";
+  let formNote="";
+  if(n.includes('bench press')) formNote="feet flat on floor, slight arch, bar at chest, elbows at 45 degrees";
+  else if(n.includes('deadlift')&&!n.includes('romanian')) formNote="neutral spine, hips hinged, bar close to body, lats engaged";
+  else if(n.includes('romanian')) formNote="hips pushed back, flat back, deep hamstring stretch";
+  else if(n.includes('squat')) formNote="knees tracking toes, depth below parallel, upright torso";
+  else if(n.includes('pull-up')) formNote="arms fully extended at bottom, chin over bar at top";
+  else if(n.includes('curl')&&!n.includes('leg')) formNote="elbows fixed at sides, bicep peak contracted at top";
+  else if(n.includes('overhead press')) formNote="bar at full lockout overhead, core tight";
+  else if(n.includes('lateral raise')) formNote="arms at shoulder height, slight elbow bend, controlled arc";
+  else if(n.includes('row')) formNote="elbow driving back, shoulder blade retracted, torso stable";
+  else if(n.includes('dip')) formNote="elbows back, torso slightly forward, full range";
+  else if(n.includes('lunge')||n.includes('split squat')) formNote="front knee at 90 degrees, rear knee near floor, torso upright";
+  else if(n.includes('hip thrust')) formNote="hips fully extended, glutes squeezed, knees at 90 degrees";
+  else if(n.includes('plank')) formNote="straight body line, elbows under shoulders, core tight";
+  return `Highly detailed black and white fitness instructional pencil sketch illustration. A muscular but natural male athlete ${equipment} performing ${exerciseName}${formNote ? ", "+formNote : ""}. ${view}. Style: realistic pencil drawing with fine cross-hatching, stippling for muscle depth and shadow, anatomically correct muscle definition, clean white background, professional fitness textbook quality, no colour, no cartoon, no vector art. Shows correct exercise form and technique clearly.`;
+}
+
+/* ── WORKOUT DATA ── */
+const W={
+  chest:{label:"CHEST",color:"#1E90FF",accent:"#72B8FF",routines:[
+    {name:"Power Press",level:"Intermediate",duration:"45 min",exercises:[
+      {name:"Barbell Bench Press",sets:"4",reps:"6–8",rest:120,mins:12,steps:["Lie flat on bench, feet planted firmly on the floor.","Grip bar just outside shoulder-width, wrists straight.","Unrack and lower bar slowly to mid-chest.","Press explosively to full extension, squeezing chest.","Keep core braced and shoulder blades retracted."]},
+      {name:"Incline Dumbbell Press",sets:"3",reps:"10–12",rest:90,mins:10,steps:["Set bench to 30–45° angle.","Hold dumbbells at chest level, palms facing forward.","Press up and slightly inward, feel upper chest contracting.","Lower with full control, get a good stretch at bottom.","Keep elbows at 45° to your torso."]},
+      {name:"Cable Flyes",sets:"3",reps:"12–15",rest:60,mins:9,steps:["Set cables to shoulder height, stand in split stance.","Hold handles with a soft bend in your elbows.","Arc the handles together in front of your chest.","Squeeze hard at peak contraction for 1 second.","Let arms open back slowly — feel the full stretch."]},
+      {name:"Dips (chest-forward lean)",sets:"3",reps:"10–12",rest:90,mins:9,steps:["Mount parallel bars, arms fully extended at start.","Lean your torso forward about 30°.","Lower your body until you feel a deep chest stretch.","Press back up powerfully through your chest.","Keep elbows slightly flared, not completely tucked."]},
+    ]},
+    {name:"Hypertrophy Builder",level:"Intermediate",duration:"50 min",exercises:[
+      {name:"Dumbbell Flat Press",sets:"4",reps:"10–12",rest:90,mins:12,steps:["Lie on flat bench, dumbbells at chest level.","Press both dumbbells up until arms are nearly locked.","Lower through a full range of motion.","Keep shoulder blades pinched back into the bench.","Pause 1 second at the bottom for maximum tension."]},
+      {name:"Pec Deck Machine",sets:"3",reps:"12–15",rest:60,mins:9,steps:["Adjust seat so handles align with your mid-chest.","Grip handles and bring arms together in a smooth arc.","Do NOT let elbows go behind your body.","Squeeze pecs hard at the peak of each rep.","Control the return — resist the weight on the way back."]},
+      {name:"Push-Up Superset",sets:"3",reps:"Failure",rest:60,mins:8,steps:["Start with wide-grip push-ups.","Lower chest to just above the floor, elbows angled out.","Immediately move to standard push-ups (no rest).","Finish with diamond push-ups, hands under your chest.","Keep your core rigid like a plank throughout all three."]},
+      {name:"Landmine Press",sets:"3",reps:"10 each",rest:90,mins:11,steps:["Load one end of the barbell into a corner.","Stand in a split stance, hold loaded end at shoulder height.","Press the bar diagonally upward following its natural arc.","Fully extend your arm at the top, control the return.","Great shoulder-friendly movement for upper chest."]},
+    ]},
+    {name:"Burnout Blitz",level:"Advanced",duration:"35 min",exercises:[
+      {name:"Flat Bench Press (heavy)",sets:"5",reps:"5",rest:180,mins:13,steps:["Load 85–90% of your one-rep max on the bar.","Set up with a tight arch, leg drive engaged.","Big breath in, brace hard — treat every rep seriously.","Touch bar to chest, then drive through heels as you press.","Full lockout at top, pause briefly, then lower with control."]},
+      {name:"Incline Cable Flyes",sets:"3",reps:"15",rest:45,mins:7,steps:["Set bench at 30° inside a cable crossover station.","Use low pulley setting for maximum upper-chest tension.","Arc the cables upward and together above your chest.","The cable maintains constant tension.","Squeeze hard at the top, lower slowly back down."]},
+      {name:"Push-Up Drop Set",sets:"3",reps:"To failure",rest:60,mins:7,steps:["Wide push-ups first — hands well beyond shoulders.","Go to absolute failure.","Immediately transition to regular push-ups — no rest.","Again to failure, then straight into diamond push-ups.","One full round of all three = one set."]},
+      {name:"Chest Press Machine",sets:"2",reps:"20",rest:30,mins:5,steps:["Choose a moderate weight — this is a pure pump finisher.","Press handles out to full extension in one smooth motion.","Control the return, keep chest muscles under tension.","Use a 1-up / 2-down tempo.","Push to failure on the second set."]},
+    ]},
+  ]},
+  back:{label:"BACK",color:"#00C896",accent:"#5EEDC8",routines:[
+    {name:"Width & Thickness",level:"Intermediate",duration:"50 min",exercises:[
+      {name:"Deadlift",sets:"4",reps:"5",rest:180,mins:14,steps:["Stand with bar over mid-foot, feet hip-width apart.","Hinge down, grip bar just outside your legs.","Big breath, brace core tight, flatten your back.","Drive the floor away with your legs, keep bar close.","Lock out at the top — hips forward, glutes squeezed."]},
+      {name:"Wide-Grip Pull-Up",sets:"4",reps:"8–10",rest:120,mins:10,steps:["Hang from the bar with a grip wider than shoulders.","Retract your shoulder blades before you start pulling.","Drive your elbows down and back to pull chest toward bar.","Pause at the top with chin clearing the bar.","Lower yourself fully — complete range of motion."]},
+      {name:"Bent-Over Barbell Row",sets:"3",reps:"8–10",rest:90,mins:10,steps:["Hinge at hips to roughly 45°, back flat and neutral.","Grip bar overhand or underhand, shoulder-width.","Pull the bar to your lower chest — not your stomach.","Keep elbows close to your body for lat activation.","Lower the bar slowly with complete control."]},
+      {name:"Seated Cable Row",sets:"3",reps:"12",rest:60,mins:9,steps:["Sit upright on the machine, feet on the platforms.","Pull the handle to your lower abdomen, elbows tucked.","Squeeze your shoulder blades together at the finish.","Lean forward slightly on the return for a lat stretch.","Keep your lower back stable — don't swing."]},
+    ]},
+    {name:"Lat Dominator",level:"Intermediate",duration:"45 min",exercises:[
+      {name:"Lat Pulldown",sets:"4",reps:"10–12",rest:90,mins:11,steps:["Sit with thighs secured, grip the bar wide.","Lean back about 10–15°.","Pull bar to your upper chest, driving elbows down and back.","Hold for 1 second feeling the lat squeeze.","Control the bar back up until arms are fully extended."]},
+      {name:"Single-Arm DB Row",sets:"3",reps:"12 each",rest:60,mins:9,steps:["Place one hand and knee on the bench for support.","Let the dumbbell hang with arm fully extended.","Lead with your elbow, not your hand.","Pull dumbbell to hip height in a strong rowing motion.","Lower fully to feel a complete lat stretch at the bottom."]},
+      {name:"Straight-Arm Pulldown",sets:"3",reps:"15",rest:60,mins:8,steps:["Stand at a cable machine, arms extended overhead.","Keep a slight locked bend in your elbows throughout.","Pull the bar down in an arc all the way to your thighs.","Feel your lats fully contract at the bottom.","Return slowly — resist the stretch at the top."]},
+      {name:"Meadows Row",sets:"3",reps:"10 each",rest:90,mins:10,steps:["Load a barbell into a landmine attachment or corner.","Stand perpendicular to the bar, grip the loaded end.","Row the bar up toward your hip with a powerful drive.","Allow a full stretch and reach at the bottom each rep.","Keep your torso stable — don't rotate excessively."]},
+    ]},
+    {name:"Posterior Chain",level:"Advanced",duration:"55 min",exercises:[
+      {name:"Romanian Deadlift",sets:"4",reps:"8",rest:120,mins:12,steps:["Hold the bar at hip level with a slight knee bend.","Push your hips back as you lower — not squatting down.","Feel a deep hamstring-glute stretch as bar descends.","Drive your hips through to stand.","Control the eccentric — this is where muscle grows."]},
+      {name:"T-Bar Row",sets:"4",reps:"10",rest:90,mins:11,steps:["Use the chest-supported version if available.","Grip handles firmly, chest on the pad.","Row the handles to your lower chest with elbows wide.","Squeeze your upper back and rhomboids hard at top.","Lower with full control."]},
+      {name:"Face Pulls",sets:"3",reps:"15–20",rest:45,mins:8,steps:["Set rope at upper-chest height on a cable machine.","Grip both ends, step back to create tension.","Pull the rope toward your face, hands separating wide.","Elbows at shoulder height, flared outward.","Control the return."]},
+      {name:"Hyperextensions",sets:"3",reps:"15",rest:60,mins:8,steps:["Position face-down on the hyperextension bench.","Ankles secured under the pads.","Lower your torso down, feel your lower back stretch.","Raise back up to parallel.","Squeeze your glutes hard at the top for 1 full second."]},
+    ]},
+  ]},
+  biceps:{label:"BICEPS",color:"#00BFFF",accent:"#66D9FF",routines:[
+    {name:"Peak Sculptor",level:"Beginner",duration:"30 min",exercises:[
+      {name:"Barbell Curl",sets:"4",reps:"8–10",rest:90,mins:9,steps:["Stand tall, grip bar shoulder-width with underhand grip.","Keep your elbows pinned tight against your sides.","Curl the bar toward your chin in a smooth arc.","Squeeze the bicep hard at the top.","Lower slowly — the negative phase builds the most mass."]},
+      {name:"Hammer Curl",sets:"3",reps:"10–12",rest:60,mins:7,steps:["Hold dumbbells with a neutral grip at your sides.","Keep your wrists straight and elbows completely fixed.","Curl both dumbbells simultaneously, or alternate.","The neutral grip builds the brachialis for arm thickness.","Control both the up and down portions equally."]},
+      {name:"Incline DB Curl",sets:"3",reps:"12",rest:60,mins:7,steps:["Set bench to 60° incline, lean back and relax.","Let your arms hang straight down — full bicep stretch.","Curl the dumbbells up without moving your upper arms.","This stretched position targets the long head.","Lower slowly all the way down on every single rep."]},
+      {name:"Concentration Curl",sets:"2",reps:"15",rest:45,mins:5,steps:["Sit on bench, rest your working elbow on your inner thigh.","Hold the dumbbell with full arm extension at the start.","Curl slowly upward, squeezing hard at the very top.","No momentum allowed — pure bicep isolation.","Lower with a 3-second count for maximum tension."]},
+    ]},
+    {name:"Supination King",level:"Intermediate",duration:"35 min",exercises:[
+      {name:"Preacher Curl",sets:"4",reps:"10",rest:90,mins:10,steps:["Position upper arms flat on the preacher pad.","Grip the EZ-bar or dumbbells with a supinated grip.","Curl upward — stop just before the bar reaches vertical.","The pad prevents any swinging momentum.","Lower fully to feel a complete stretch at the bottom."]},
+      {name:"Cable Curl (low pulley)",sets:"3",reps:"12",rest:60,mins:8,steps:["Attach a straight or EZ bar to the low cable pulley.","Stand close to the cable, arms extended down.","Curl the bar upward while keeping elbows completely still.","Hold the contraction at the top for a full second.","The cable keeps tension at the bottom."]},
+      {name:"Zottman Curl",sets:"3",reps:"10",rest:75,mins:8,steps:["Start the movement with a supinated (underhand) grip.","Curl the dumbbells up just like a regular bicep curl.","At the top, rotate your wrists to a pronated grip.","Lower slowly with this overhand grip — 3-4 seconds.","Rotate back to underhand at the bottom for next rep."]},
+      {name:"Spider Curl",sets:"2",reps:"15",rest:45,mins:6,steps:["Set bench to an incline, lie chest-down on the pad.","Let your arms hang straight over the front edge.","Curl both dumbbells up simultaneously with strict form.","The chest support removes all possibility of cheating.","Lower fully every rep."]},
+    ]},
+    {name:"Pump Protocol",level:"Intermediate",duration:"25 min",exercises:[
+      {name:"21s Barbell Curl",sets:"3",reps:"21",rest:90,mins:8,steps:["Grip bar shoulder-width with an underhand grip.","7 reps from full extension up to the halfway point only.","7 reps from the halfway point up to the top only.","7 full range-of-motion reps to complete the set.","All 21 reps with NO rest between the phases."]},
+      {name:"Cross-Body Hammer Curl",sets:"3",reps:"12 each",rest:60,mins:6,steps:["Hold dumbbells with a neutral grip at your sides.","Curl one dumbbell across your body toward opposite shoulder.","Keep your elbow fixed — only your forearm should move.","Alternate arms on each rep.","Adds unique tension to the brachialis."]},
+      {name:"Cable Rope Hammer Curl",sets:"3",reps:"15",rest:45,mins:6,steps:["Attach the rope to the low cable pulley.","Stand upright, elbows slightly in front of your torso.","Curl the rope upward keeping a neutral wrist throughout.","Squeeze and hold at the top.","Lower the rope slowly against the cable tension."]},
+      {name:"Reverse Curl",sets:"2",reps:"15",rest:45,mins:4,steps:["Grip the barbell with an overhand (pronated) grip.","Keep your wrists neutral.","Curl the bar upward focusing on the forearm muscles.","This targets the brachioradialis that regular curls miss.","Lower slowly with full control every rep."]},
+    ]},
+  ]},
+  triceps:{label:"TRICEPS",color:"#39FF14",accent:"#8FFF6A",routines:[
+    {name:"Horseshoe Builder",level:"Beginner",duration:"25 min",exercises:[
+      {name:"Close-Grip Bench Press",sets:"4",reps:"8–10",rest:90,mins:8,steps:["Lie on flat bench, grip bar at shoulder-width.","Keep your elbows tucked at 45° as you lower the bar.","Lower bar to your lower chest.","Press upward through the triceps.","Lock out fully at the top and squeeze the triceps."]},
+      {name:"Overhead Tricep Extension",sets:"3",reps:"12",rest:60,mins:6,steps:["Hold dumbbell or EZ bar overhead with both hands.","Keep your upper arms pointing straight up.","Lower the weight behind your head by bending elbows only.","This stretches the long head of the tricep maximally.","Press back up to full arm extension."]},
+      {name:"Tricep Pushdown (rope)",sets:"3",reps:"15",rest:60,mins:6,steps:["Attach the rope to a high cable pulley.","Keep your elbows pinned tightly to your sides.","Push the rope down to full extension.","At the bottom, flare your wrists out for a peak squeeze.","Control the return."]},
+      {name:"Bench Dip",sets:"2",reps:"Failure",rest:60,mins:4,steps:["Place hands behind you on the edge of a flat bench.","Feet out in front, hips lifted off the floor.","Lower by bending elbows straight behind you — not out.","Lower until upper arms are roughly parallel to floor.","Drive back up to full arm extension."]},
+    ]},
+    {name:"Long Head Focus",level:"Intermediate",duration:"35 min",exercises:[
+      {name:"Skull Crusher",sets:"4",reps:"10",rest:90,mins:10,steps:["Lie on bench, hold EZ bar with a close grip overhead.","Keep upper arms completely vertical and stationary.","Lower the bar toward your forehead or behind your head.","This hits the long head of the tricep heavily.","Press back to lockout."]},
+      {name:"Overhead Cable Extension",sets:"3",reps:"12",rest:60,mins:8,steps:["Face away from the cable machine set to high.","Hold the rope or bar overhead, elbows bent.","Press arms to full extension overhead.","Keep upper arms completely parallel and still.","The overhead angle maximises the long head stretch."]},
+      {name:"Incline DB Kickback",sets:"3",reps:"12 each",rest:60,mins:8,steps:["Lie chest-down on an incline bench (30–45°).","Let the dumbbell hang down, elbow bent at 90°.","Extend your arm back until it is completely straight.","Hold the peak contraction for 1 full second.","Lower slowly back to the 90° starting position."]},
+      {name:"Tate Press",sets:"2",reps:"12",rest:45,mins:6,steps:["Lie on flat bench with dumbbells held above your chest.","Start with elbows flared wide out to the sides.","Lower dumbbells toward your chest by bending elbows outward.","Stop when the dumbbells lightly touch your lower chest.","Press back up through tricep extension."]},
+    ]},
+    {name:"Tri-Set Torture",level:"Advanced",duration:"25 min",exercises:[
+      {name:"Weighted Dips",sets:"4",reps:"8",rest:120,mins:10,steps:["Attach a weight belt or hold a dumbbell between your legs.","Grip parallel bars, start with arms fully extended.","Keep your torso as upright as possible.","Lower until upper arms are parallel to the floor.","Explode back up to a complete lockout."]},
+      {name:"Cable Pushdown + Overhead",sets:"3",reps:"12+12",rest:60,mins:7,steps:["Do 12 standard rope pushdown reps to start.","Without resting, turn to face away from the cable.","Perform 12 overhead cable extensions immediately after.","This superset hits all three heads of the tricep.","That combination counts as ONE set."]},
+      {name:"Diamond Push-Ups",sets:"3",reps:"Failure",rest:45,mins:5,steps:["Get into push-up position, hands close together.","Form a diamond shape with your index fingers and thumbs.","Lower your chest toward your hands, elbows pointing behind you.","Press back up powerfully through your triceps.","Go to absolute failure."]},
+      {name:"Single-Arm Pushdown",sets:"2",reps:"15 each",rest:30,mins:3,steps:["Use a single D-handle on a high cable.","Keep your working elbow pinned to your side.","Push the handle down to a full extension.","At the bottom, rotate wrist slightly for peak contraction.","Alternate arms with minimal rest."]},
+    ]},
+  ]},
+  shoulders:{label:"SHOULDERS",color:"#4FC3F7",accent:"#9BE4FF",routines:[
+    {name:"Boulder Builder",level:"Intermediate",duration:"30 min",exercises:[
+      {name:"Barbell Overhead Press",sets:"4",reps:"6–8",rest:120,mins:9,steps:["Stand with barbell at your collarbone, grip just outside shoulders.","Brace your core hard — back straight.","Press the bar straight up, slightly back at lockout.","Bar should travel in a near-vertical path past your face.","Lower under control back to your collarbone."]},
+      {name:"Dumbbell Lateral Raise",sets:"4",reps:"12–15",rest:60,mins:7,steps:["Hold dumbbells at your sides with a soft elbow bend.","Raise arms out to the sides up to shoulder height.","Lead with your elbows, not your wrists.","Hold for 1 second at the top.","Lower slowly — gravity does the work, you resist it."]},
+      {name:"Rear Delt Fly",sets:"3",reps:"15",rest:60,mins:7,steps:["Hinge forward at the hips or lie face-down on incline bench.","Hold dumbbells hanging below your chest.","Raise both arms out to the sides in a wide arc.","Squeeze your rear delts hard at the top.","Lower slowly — feel the rear delt stretch on the way down."]},
+      {name:"Arnold Press",sets:"3",reps:"10–12",rest:90,mins:7,steps:["Start with dumbbells at face height, palms facing toward you.","Press upward while rotating palms to face outward.","Reach full extension overhead with palms now facing forward.","Reverse the rotation as you lower back down.","Hits all three deltoid heads in one motion."]},
+    ]},
+    {name:"3D Delts",level:"Intermediate",duration:"45 min",exercises:[
+      {name:"Cable Lateral Raise",sets:"4",reps:"15 each",rest:60,mins:11,steps:["Set cable to the lowest position, stand beside it.","Grip the handle with your far hand, cable crossing your body.","Raise your arm out to the side to shoulder height.","The cable provides constant tension unlike free weights.","Control the return."]},
+      {name:"Upright Row",sets:"3",reps:"12",rest:75,mins:9,steps:["Grip barbell or cable with a narrow overhand grip.","Pull the bar straight up to chin height, elbows above wrists.","Keep the bar close to your body throughout.","Hold briefly at chin level with delts fully contracted.","Lower with full control."]},
+      {name:"Front Raise",sets:"3",reps:"12",rest:60,mins:8,steps:["Hold dumbbells in front of your thighs, palms facing inward.","Raise one or both arms directly forward to shoulder height.","Maintain a slight bend in the elbows throughout.","Use strict form — no swinging of the torso.","Lower slowly."]},
+      {name:"Seated DB Shoulder Press",sets:"3",reps:"10–12",rest:90,mins:12,steps:["Sit on a bench with back support, dumbbells at ear level.","Press the dumbbells up and slightly inward at the top.","Don't fully lock out — keep constant tension on the delts.","Lower back to ear level for a full range of motion.","Keep core tight."]},
+    ]},
+    {name:"Overhead Destroyer",level:"Advanced",duration:"35 min",exercises:[
+      {name:"Push Press",sets:"4",reps:"6",rest:120,mins:11,steps:["Hold barbell at your collarbone, feet hip-width apart.","Perform a quick quarter squat — controlled dip at the knees.","Explode upward using leg drive to initiate the press.","Press the bar overhead to full lockout.","Lower under control back to your starting position."]},
+      {name:"Lateral Raise Drop Set",sets:"3",reps:"15+15+15",rest:90,mins:8,steps:["Start with a weight you can do 15 reps at with strict form.","Perform 15 lateral raises, then immediately drop the weight.","Pick up lighter dumbbells and do 15 more without resting.","Drop to lightest weight, complete final 15 reps.","This triple-drop completely burns out the medial deltoid."]},
+      {name:"Face Pull",sets:"4",reps:"20",rest:45,mins:8,steps:["Set rope attachment to upper-chest height on cable.","Grip both rope ends and step back into a slight lean.","Pull the rope toward your face, hands separating wide.","Elbows at shoulder height and flared outward.","Builds rear delts and greatly improves posture."]},
+      {name:"Plate Front Raise",sets:"3",reps:"15",rest:60,mins:8,steps:["Hold a weight plate with both hands at 3 and 9 o'clock.","Stand tall, arms hanging in front of your thighs.","Raise the plate directly forward to eye level.","Pause briefly at the top.","Lower slowly using a 3-second descent on every rep."]},
+    ]},
+  ]},
+  abs:{label:"ABS",color:"#FF7B2C",accent:"#FFAA70",routines:[
+    {name:"Core Crusher",level:"Beginner",duration:"25 min",exercises:[
+      {name:"Crunches",sets:"3",reps:"15",rest:45,mins:6,steps:["Lie on your back, knees bent, feet flat on the floor.","Place hands behind your head — don't pull your neck.","Curl your upper back off the floor using your abs only.","Hold the peak contraction for 1 second at the top.","Lower back down slowly and repeat with control."]},
+      {name:"Leg Raises",sets:"3",reps:"12",rest:45,mins:6,steps:["Lie flat, hands under your hips for lower-back support.","Keep legs straight or with a slight bend at the knees.","Raise both legs together up toward 90° using your abs.","Lower legs slowly without letting them touch the floor.","Keep your lower back pressed into the ground throughout."]},
+      {name:"Plank Hold",sets:"3",reps:"30 sec",rest:45,mins:5,steps:["Get into a forearm plank — elbows under shoulders.","Keep your body in a perfectly straight line head to heels.","Squeeze glutes and abs together as hard as you can.","Don't let your hips sag or rise — stay completely flat.","Breathe steadily throughout the hold."]},
+      {name:"Mountain Climbers",sets:"3",reps:"20",rest:45,mins:5,steps:["Start in a high push-up position, arms fully extended.","Drive one knee explosively toward your chest.","Immediately switch legs in a running motion.","Keep your hips down and level.","Move at a controlled pace to feel the abs working."]},
+    ]},
+    {name:"Six Pack Builder",level:"Intermediate",duration:"30 min",exercises:[
+      {name:"Bicycle Crunches",sets:"3",reps:"20",rest:45,mins:7,steps:["Lie on your back, hands behind your head, knees raised.","Bring one knee toward your chest while rotating opposite elbow to meet it.","Extend the other leg out straight — keep it hovering.","Alternate in a cycling motion, smooth and controlled.","The rotation targets your obliques for a full core burn."]},
+      {name:"Hanging Knee Raises",sets:"3",reps:"12",rest:60,mins:8,steps:["Hang from a pull-up bar with a shoulder-width grip.","Begin with a slight posterior pelvic tilt.","Raise both knees toward your chest using your lower abs.","Hold briefly at the top — don't swing or use momentum.","Lower slowly to a full hang and repeat."]},
+      {name:"Russian Twists",sets:"3",reps:"20",rest:45,mins:7,steps:["Sit on the floor, knees bent, lean back slightly at 45°.","Hold a plate or dumbbell in front of your chest.","Rotate your torso to the right, tapping weight beside your hip.","Rotate to the left — that is one full rep.","Keep your feet lifted for added difficulty."]},
+      {name:"Ab Wheel Rollout",sets:"3",reps:"10",rest:60,mins:6,steps:["Kneel on the floor, hold the ab wheel with both hands.","Brace your core extremely hard before moving.","Roll forward slowly until your body is near parallel.","Hold for 1 second — stay braced, don't collapse.","Roll back by contracting your abs to return."]},
+    ]},
+    {name:"Plank & Burn",level:"Advanced",duration:"25 min",exercises:[
+      {name:"Dragon Flag",sets:"4",reps:"6",rest:90,mins:8,steps:["Lie on a bench and grip the top edge firmly behind your head.","Raise your entire body up until vertical on your shoulder blades.","Lower your body slowly — keep it completely rigid and straight.","Resist gravity all the way down.","Don't let your lower back collapse."]},
+      {name:"Cable Crunch",sets:"3",reps:"15",rest:60,mins:7,steps:["Kneel in front of a high cable with a rope attachment.","Grip the rope ends beside your head, don't pull with your arms.","Round your spine forward, crunching ribcage toward your knees.","Your hips should stay fixed — only your upper body moves.","Slowly return to the starting position with control."]},
+      {name:"Windshield Wipers",sets:"3",reps:"10",rest:60,mins:6,steps:["Hang from a pull-up bar with both hands.","Raise your legs up to horizontal or higher.","Rotate both legs slowly to the right side.","Bring back to centre, then rotate to the left side.","Keep legs together and movement controlled."]},
+      {name:"Hollow Body Hold",sets:"3",reps:"30 sec",rest:45,mins:4,steps:["Lie on your back, press your lower back firmly into the floor.","Extend arms overhead, legs out straight and slightly raised.","Your back should be completely flat.","Hold this position while breathing steadily.","This is the foundation of gymnastics core strength."]},
+    ]},
+  ]},
+  legs:{label:"LEGS",color:"#0AFFD4",accent:"#70FFE8",routines:[
+    {name:"Quad Quake",level:"Intermediate",duration:"55 min",exercises:[
+      {name:"Back Squat",sets:"5",reps:"5",rest:180,mins:16,steps:["Bar on your upper traps, feet shoulder-width, toes out slightly.","Take a big breath and brace your core before descending.","Break at hips and knees at the same time.","Squat to at least parallel; deeper if your mobility allows.","Drive knees out and lock hips forward at the top."]},
+      {name:"Leg Press",sets:"4",reps:"10–12",rest:120,mins:13,steps:["Sit in the machine, feet shoulder-width on the platform.","Lower the sled until knees reach 90° or slightly below.","Press through your heels — don't fully lock your knees.","Higher feet placement targets hamstrings, lower hits quads more.","Never allow your lower back to round at the bottom."]},
+      {name:"Bulgarian Split Squat",sets:"3",reps:"10 each",rest:90,mins:13,steps:["Rear foot elevated on a bench behind you.","Front foot far enough forward that your shin stays vertical.","Lower your back knee toward the floor — keep torso upright.","Drive through your front heel to stand back up.","Single-leg work builds serious quad strength and mass."]},
+      {name:"Leg Extension",sets:"3",reps:"15",rest:60,mins:8,steps:["Sit in the machine, pad resting across your lower shins.","Extend legs to a full lockout position at the top.","Pause and squeeze your quads hard at peak extension.","Lower slowly using a 3-second eccentric — this is critical.","The slow negative creates maximum muscle damage for growth."]},
+    ]},
+    {name:"Posterior Focus",level:"Intermediate",duration:"50 min",exercises:[
+      {name:"Romanian Deadlift",sets:"4",reps:"10",rest:120,mins:12,steps:["Hold bar at hip level with a shoulder-width grip.","Push your hips back as you lower the bar — not squatting.","Lower until you feel an intense hamstring stretch.","Keep your back completely flat throughout.","Drive hips forward to stand and squeeze glutes at top."]},
+      {name:"Lying Leg Curl",sets:"4",reps:"12",rest:90,mins:11,steps:["Lie face-down on the machine, pad behind your ankles.","Curl your heels toward your glutes as far as possible.","Plantarflex your feet at the top for a peak squeeze.","Lower very slowly — use a 3 to 4 second descent.","Feel the hamstring tension throughout the entire range."]},
+      {name:"Hip Thrust (barbell)",sets:"4",reps:"12",rest:90,mins:11,steps:["Upper back on the bench edge, bar across your hips.","Feet flat and hip-width, knees bent at roughly 90°.","Drive your hips explosively upward in a powerful thrust.","Squeeze your glutes extremely hard at the top for 1 full second.","Lower until hips hover just above the floor — repeat."]},
+      {name:"Good Mornings",sets:"3",reps:"12",rest:90,mins:10,steps:["Bar across upper traps as in squatting, feet hip-width.","Slight bend in knees, maintain a neutral spine throughout.","Hinge forward at the hips, pushing them back behind you.","Lower your torso to about parallel with the floor.","Drive your hips forward to stand — use light weight here."]},
+    ]},
+    {name:"Complete Destroyer",level:"Advanced",duration:"60 min",exercises:[
+      {name:"Front Squat",sets:"4",reps:"6–8",rest:120,mins:14,steps:["Bar rests on your front delts — elbows high, arms crossed.","Maintaining high elbows throughout is absolutely critical.","Squat deep with a very upright torso.","This stance emphasises the quads far more than back squats.","Drive knees out and elbows up to stand."]},
+      {name:"Hack Squat",sets:"3",reps:"10–12",rest:90,mins:11,steps:["Load the machine, position feet low and narrow on the platform.","This low foot position maximises quad muscle engagement.","Lower until your thighs break parallel — go deep.","Explode back up without fully locking out your knees.","Control the descent — don't bounce at the bottom."]},
+      {name:"Walking Lunges",sets:"3",reps:"20 total",rest:90,mins:12,steps:["Hold dumbbells at your sides or use a barbell on your back.","Step forward with one leg — make it a long stride.","Lower your back knee toward the ground — tap if possible.","Drive through your front heel to step into the next rep.","20 total reps = 10 per leg done continuously walking."]},
+      {name:"Standing Calf Raise",sets:"4",reps:"20",rest:45,mins:9,steps:["Stand on a calf raise machine or on the edge of a step.","Lower your heels below the step — get a full stretch.","Pause for 2 full seconds at the bottom — this is crucial.","Rise up onto your toes as high as you can possibly go.","Hold for 1 second at the very top."]},
+    ]},
+  ]},
+};
+
+const LC={Beginner:"#00C896",Intermediate:"#1E90FF",Advanced:"#39FF14"};
+
+/* ── EXERCISE IMAGE — Pollinations.ai, direct img tag method ── */
+function ExerciseImage({name, c}){
+  const localSrc=getLocalImage(name);
+  const [url,setUrl]=useState(()=>{
+    if(localSrc) return localSrc;
+    try{ return localStorage.getItem(`ezze_img_${name}`)||null; }catch(e){ return null; }
+  });
+  const [loaded,setLoaded]=useState(false);
+  const [isLocal]=useState(!!localSrc);
+  const [errCount,setErrCount]=useState(0);
+
+  useEffect(()=>{
+    if(isLocal){ setLoaded(false); return; }
+    if(!url) buildUrl();
+  },[name]);
+
+  const buildUrl=()=>{
+    setLoaded(false);
+    const prompt=buildPrompt(name);
+    const encoded=encodeURIComponent(prompt);
+    const seed=Math.floor(Math.random()*999999);
+    setUrl(`https://image.pollinations.ai/prompt/${encoded}?width=1024&height=1024&seed=${seed}&nologo=true&enhance=true&model=flux`);
+  };
+
+  const handleLoad=()=>{
+    setLoaded(true);
+    if(!isLocal){ try{localStorage.setItem(`ezze_img_${name}`,url);}catch(e){} }
+  };
+
+  const handleError=()=>{
+    if(isLocal) return;
+    if(errCount<1){ setErrCount(n=>n+1); setLoaded(false); setTimeout(()=>buildUrl(),2500); }
+    else { setErrCount(99); }
+  };
+
+  const handleRegen=()=>{
+    if(isLocal) return;
+    try{localStorage.removeItem(`ezze_img_${name}`);}catch(e){}
+    setErrCount(0); setLoaded(false); buildUrl();
+  };
+
+  return(
+    <div style={{width:"100%",borderRadius:"12px",overflow:"hidden",position:"relative",background:"#030E18"}}>
+      {url&&(
+        <img src={url} alt={name} onLoad={handleLoad} onError={handleError}
+          style={{width:"100%",display:loaded?"block":"none",borderRadius:"12px"}}/>
+      )}
+      {/* Local badge */}
+      {loaded&&isLocal&&(
+        <div style={{position:"absolute",top:"8px",left:"8px",padding:"3px 8px",background:"rgba(0,0,0,.7)",borderRadius:"6px",fontSize:"8px",color:"#00C896",letterSpacing:"1px"}}>⚡ LOCAL</div>
+      )}
+      {/* Skeleton */}
+      {(!loaded&&errCount<99)&&(
+        <div style={{width:"100%",aspectRatio:"1",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:"14px",background:"linear-gradient(90deg,#0A1E2E 25%,#0D2A3A 50%,#0A1E2E 75%)",backgroundSize:"200% 100%",animation:"shimmer 1.6s infinite",borderRadius:"12px"}}>
+          <div style={{fontSize:"30px",animation:"spin 1.4s linear infinite",display:"inline-block"}}>{isLocal?"🖼️":"✏️"}</div>
+          <div style={{fontSize:"9px",color:c+"88",letterSpacing:"2px",textAlign:"center",lineHeight:"1.8"}}>
+            {isLocal?"LOADING IMAGE...":"GENERATING SKETCH..."}<br/>
+            {!isLocal&&(errCount===1?"Retrying...":"15–30 seconds")}
+          </div>
+        </div>
+      )}
+      {/* Error */}
+      {errCount>=99&&(
+        <div style={{width:"100%",aspectRatio:"1",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:"12px",background:"#05151E",border:`1.5px dashed #FF000030`,borderRadius:"12px"}}>
+          <div style={{fontSize:"11px",color:"#FF4040",textAlign:"center",letterSpacing:".5px"}}>Generation failed</div>
+          <button onClick={handleRegen} style={{padding:"10px 24px",background:c+"20",border:`1.5px solid ${c}`,borderRadius:"10px",color:c,fontSize:"11px",letterSpacing:"2px",cursor:"pointer",fontWeight:"700"}}>↺ TRY AGAIN</button>
+        </div>
+      )}
+      {/* Regen for AI images only */}
+      {loaded&&!isLocal&&(
+        <button onClick={handleRegen} style={{position:"absolute",top:"8px",right:"8px",padding:"4px 12px",background:"rgba(0,0,0,.7)",border:"none",borderRadius:"6px",color:"#ccc",fontSize:"9px",letterSpacing:"1px",cursor:"pointer"}}>↺ REGEN</button>
+      )}
+    </div>
+  );
+}
+
+/* ── EQUIPMENT BADGES ── */
+function EquipmentBadges({name,c}){
+  return(
+    <div style={{display:"flex",gap:"5px",flexWrap:"wrap",marginTop:"10px"}}>
+      {getEquipment(name).map(k=>{
+        const e=EQ[k]; if(!e) return null;
+        return <span key={k} style={{display:"inline-flex",alignItems:"center",gap:"3px",padding:"3px 8px",background:"#05151E",border:`1px solid ${c}28`,borderRadius:"20px",fontSize:"9px",color:c+"99",letterSpacing:"1px"}}>{e.icon} {e.label.toUpperCase()}</span>;
+      })}
+    </div>
+  );
+}
+
+/* ── REST TIMER ── */
+function RestTimer({seconds,color,onClose}){
+  const [t,setT]=useState(seconds);
+  const [on,setOn]=useState(true);
+  const iv=useRef();
+  const C=2*Math.PI*46;
+  useEffect(()=>{
+    if(on&&t>0){iv.current=setInterval(()=>setT(x=>x-1),1000);}
+    else if(t===0){clearInterval(iv.current);setOn(false);}
+    return()=>clearInterval(iv.current);
+  },[on,t]);
+  const m=Math.floor(t/60),s=t%60;
+  return(
+    <div style={{position:"fixed",inset:0,background:"rgba(2,11,18,.96)",zIndex:1000,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",backdropFilter:"blur(12px)"}}>
+      <div style={{fontSize:"10px",letterSpacing:"5px",color,marginBottom:"20px"}}>REST TIMER</div>
+      <svg width="152" height="152" style={{marginBottom:"20px"}}>
+        <circle cx="76" cy="76" r="46" fill="none" stroke={color+"22"} strokeWidth="6"/>
+        <circle cx="76" cy="76" r="46" fill="none" stroke={color} strokeWidth="6" strokeLinecap="round" strokeDasharray={C} strokeDashoffset={C*(1-t/seconds)} transform="rotate(-90 76 76)" style={{transition:"stroke-dashoffset 1s linear"}}/>
+        <text x="76" y="72" textAnchor="middle" fill="white" fontSize="28" fontWeight="700" fontFamily="-apple-system,sans-serif">{String(m).padStart(2,"0")}:{String(s).padStart(2,"0")}</text>
+        <text x="76" y="90" textAnchor="middle" fill={color+"99"} fontSize="10" fontFamily="-apple-system,sans-serif">{on?"RESTING":"TIME'S UP"}</text>
+      </svg>
+      {!on&&<div style={{fontSize:"11px",color:"#00FF88",letterSpacing:"3px",marginBottom:"18px",animation:"glow 1s ease-in-out infinite"}}>◉ NEXT SET</div>}
+      <div style={{display:"flex",gap:"10px"}}>
+        <button onClick={()=>{setT(seconds);setOn(true);}} style={{padding:"11px 22px",background:"transparent",border:`1.5px solid ${color}50`,color,fontSize:"11px",letterSpacing:"2px",cursor:"pointer",borderRadius:"8px"}}>RESET</button>
+        <button onClick={onClose} style={{padding:"11px 26px",background:color+"22",border:`1.5px solid ${color}`,color,fontSize:"11px",letterSpacing:"2px",cursor:"pointer",borderRadius:"8px"}}>CLOSE</button>
+      </div>
+    </div>
+  );
+}
+
+/* ── LOG PANEL ── */
+function LogPanel({log,color,onClear,onClose}){
+  return(
+    <div style={{position:"fixed",top:0,right:0,width:"min(360px,100vw)",height:"100vh",background:"#030E18",borderLeft:`1px solid ${color}22`,zIndex:999,display:"flex",flexDirection:"column"}} className="fu">
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"22px 18px 16px",borderBottom:"1px solid #0A1E2E"}}>
+        <div style={{fontSize:"11px",letterSpacing:"4px",color}}>PROGRESS LOG</div>
+        <button onClick={onClose} style={{background:"none",border:"none",color:"#444",fontSize:"24px",cursor:"pointer",lineHeight:1}}>×</button>
+      </div>
+      <div style={{flex:1,overflowY:"auto",padding:"16px 18px"}}>
+        {log.length===0
+          ?<div style={{color:"#1A4060",fontSize:"13px",textAlign:"center",marginTop:"50px"}}>No sets logged yet.</div>
+          :<div style={{display:"flex",flexDirection:"column",gap:"8px"}}>
+            {[...log].reverse().map((e,i)=>(
+              <div key={i} style={{padding:"12px 14px",background:"#05151E",border:`1px solid ${color}18`,borderRadius:"10px"}}>
+                <div style={{fontSize:"13px",fontWeight:"600",color:"#E0E8F0",marginBottom:"5px"}}>{e.exercise}</div>
+                <div style={{display:"flex",gap:"12px",alignItems:"center",flexWrap:"wrap"}}>
+                  <span style={{fontSize:"11px",color,letterSpacing:"1px"}}>Set {e.setNum}</span>
+                  {e.weight&&<span style={{fontSize:"11px",color:"#4A8FA8"}}>{e.weight} kg</span>}
+                  <span style={{fontSize:"11px",color:"#2A6080"}}>{e.reps} reps</span>
+                  <span style={{fontSize:"10px",color:"#0D3A50",marginLeft:"auto"}}>{e.time}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        }
+      </div>
+      {log.length>0&&<div style={{padding:"16px 18px",borderTop:"1px solid #0A1E2E"}}>
+        <button onClick={onClear} style={{width:"100%",padding:"11px",background:"transparent",border:"1px solid #0D2030",color:"#1A4060",fontSize:"11px",letterSpacing:"2px",cursor:"pointer",borderRadius:"8px"}}>CLEAR ALL</button>
+      </div>}
+    </div>
+  );
+}
+
+/* ── SET MODAL ── */
+function SetModal({exercise,setNum,color,onSave,onClose}){
+  const [w,setW]=useState(""); const [r,setR]=useState("");
+  const inp={width:"100%",background:"#05151E",border:`1px solid ${color}30`,borderRadius:"10px",padding:"13px 14px",color:"#E0E8F0",fontSize:"16px",fontFamily:"inherit"};
+  return(
+    <div style={{position:"fixed",inset:0,background:"rgba(2,11,18,.92)",zIndex:1001,display:"flex",alignItems:"center",justifyContent:"center",backdropFilter:"blur(10px)",padding:"20px"}}>
+      <div style={{background:"#030E18",border:`1px solid ${color}35`,borderRadius:"16px",padding:"26px",width:"100%",maxWidth:"320px"}} className="fu">
+        <div style={{fontSize:"10px",letterSpacing:"3px",color,marginBottom:"4px"}}>LOG SET {setNum}</div>
+        <div style={{fontSize:"16px",fontWeight:"600",color:"#E0E8F0",marginBottom:"22px"}}>{exercise}</div>
+        <div style={{marginBottom:"14px"}}>
+          <div style={{fontSize:"10px",letterSpacing:"2px",color:"#0D3A50",marginBottom:"6px"}}>WEIGHT (kg) — optional</div>
+          <input value={w} onChange={e=>setW(e.target.value)} type="number" placeholder="e.g. 60" style={inp}/>
+        </div>
+        <div style={{marginBottom:"22px"}}>
+          <div style={{fontSize:"10px",letterSpacing:"2px",color:"#0D3A50",marginBottom:"6px"}}>REPS COMPLETED</div>
+          <input value={r} onChange={e=>setR(e.target.value)} type="number" placeholder="e.g. 10" style={inp}/>
+        </div>
+        <div style={{display:"flex",gap:"10px"}}>
+          <button onClick={onClose} style={{flex:1,padding:"13px",background:"transparent",border:"1px solid #0D2030",color:"#555",fontSize:"11px",letterSpacing:"2px",cursor:"pointer",borderRadius:"10px"}}>CANCEL</button>
+          <button onClick={()=>onSave(w,r||"?")} style={{flex:2,padding:"13px",background:color+"20",border:`1.5px solid ${color}`,color,fontSize:"11px",letterSpacing:"2px",cursor:"pointer",borderRadius:"10px",fontWeight:"700"}}>SAVE SET</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── LANDING PAGE ── */
+function LandingPage({name, onEnter, onChangeName}){
+  const today=new Date().getDay();
+  const todayDay=SPLIT[today];
+  const [editingName,setEditingName]=useState(false);
+  const [newName,setNewName]=useState(name);
+
+  const saveName=()=>{
+    if(newName.trim()){onChangeName(newName.trim());setEditingName(false);}
+  };
+
+  return(
+    <div style={{minHeight:"100vh",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"40px 24px",position:"relative",zIndex:1,textAlign:"center"}}>
+      <div style={{fontSize:"9px",letterSpacing:"6px",color:"#1E4060",marginBottom:"20px",fontWeight:"600"}}>TRAINING SYSTEM V7</div>
+
+      <h1 style={{fontSize:"clamp(52px,14vw,96px)",fontWeight:"900",letterSpacing:"-3px",lineHeight:.95,marginBottom:"4px",background:"linear-gradient(160deg,#ffffff 0%,#aaccee 40%,#1E90FF 100%)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>
+        EZZE'S
+      </h1>
+      <h1 style={{fontSize:"clamp(52px,14vw,96px)",fontWeight:"900",letterSpacing:"-3px",lineHeight:.95,marginBottom:"28px",background:"linear-gradient(160deg,#1E90FF 0%,#72B8FF 60%,#ffffff 100%)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>
+        ARK
+      </h1>
+
+      {/* Name display / edit */}
+      <div style={{marginBottom:"28px"}}>
+        {editingName?(
+          <div style={{display:"flex",gap:"8px",alignItems:"center",justifyContent:"center"}} className="fu">
+            <input value={newName} onChange={e=>setNewName(e.target.value)}
+              onKeyDown={e=>e.key==="Enter"&&saveName()}
+              autoFocus
+              style={{background:"#030E18",border:"1.5px solid #1E90FF50",borderRadius:"10px",padding:"10px 14px",color:"#E0E8F0",fontSize:"15px",fontFamily:"inherit",textAlign:"center",width:"180px"}}/>
+            <button onClick={saveName} style={{padding:"10px 16px",background:"#1E90FF22",border:"1.5px solid #1E90FF",borderRadius:"10px",color:"#1E90FF",fontSize:"11px",letterSpacing:"2px",cursor:"pointer",fontWeight:"700"}}>SAVE</button>
+            <button onClick={()=>{setEditingName(false);setNewName(name);}} style={{padding:"10px 12px",background:"transparent",border:"1px solid #0D2030",borderRadius:"10px",color:"#333",fontSize:"11px",cursor:"pointer"}}>✕</button>
+          </div>
+        ):(
+          <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:"10px"}}>
+            <span style={{fontSize:"14px",color:"#2A6080",letterSpacing:"2px",fontWeight:"600"}}>
+              {name==="Athlete"?"WHO ARE YOU?":name.toUpperCase()}
+            </span>
+            <button onClick={()=>setEditingName(true)}
+              style={{padding:"5px 12px",background:"transparent",border:"1px solid #1E4060",borderRadius:"20px",color:"#1E4060",fontSize:"9px",letterSpacing:"2px",cursor:"pointer",transition:"all .2s"}}>
+              ✎ CHANGE
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Motivational quote */}
+      <div style={{maxWidth:"300px",marginBottom:"36px",padding:"18px 20px",background:"#030E18",border:"1px solid #1E90FF18",borderRadius:"12px"}}>
+        <div style={{fontSize:"9px",letterSpacing:"3px",color:"#1E90FF",marginBottom:"10px",opacity:.6}}>WORDS TO LIVE BY</div>
+        <p style={{fontSize:"13px",color:"#4A7A90",lineHeight:"1.75",fontStyle:"italic"}}>
+          "We must all suffer one of two things: the pain of discipline or the pain of regret."
+        </p>
+        <p style={{fontSize:"10px",color:"#1E4060",marginTop:"10px",letterSpacing:"2px"}}>— JIM ROHN</p>
+      </div>
+
+      {/* Today pill */}
+      {todayDay&&(
+        <div style={{padding:"10px 20px",background:"#1E90FF10",border:"1px solid #1E90FF30",borderRadius:"30px",marginBottom:"36px",display:"flex",alignItems:"center",gap:"8px"}}>
+          <span style={{fontSize:"14px"}}>{todayDay.emoji}</span>
+          <span style={{fontSize:"11px",color:"#3A7090",letterSpacing:"1px"}}>TODAY — {todayDay.muscles.map(m=>W[m].label).join(" + ")}</span>
+        </div>
+      )}
+
+      {/* Enter */}
+      <button onClick={onEnter}
+        style={{padding:"18px 52px",background:"linear-gradient(135deg,#1E90FF22,#1E90FF44)",border:"1.5px solid #1E90FF",borderRadius:"14px",color:"#fff",fontSize:"13px",letterSpacing:"4px",cursor:"pointer",fontWeight:"700",width:"100%",maxWidth:"300px",marginBottom:"16px",transition:"all .2s"}}>
+        ENTER THE ARK →
+      </button>
+      <div style={{fontSize:"10px",color:"#0D2A3A",letterSpacing:"2px"}}>TAP TO VIEW YOUR WEEKLY SPLIT</div>
+
+      {/* Stats */}
+      <div style={{position:"absolute",bottom:"32px",left:0,right:0,display:"flex",justifyContent:"center",gap:"32px"}}>
+        {[["21","ROUTINES"],["7","MUSCLE GROUPS"],["5","TRAINING DAYS"]].map(([n,l])=>(
+          <div key={l} style={{textAlign:"center"}}>
+            <div style={{fontSize:"18px",fontWeight:"800",color:"#1E90FF",letterSpacing:"-1px"}}>{n}</div>
+            <div style={{fontSize:"8px",color:"#0D2A3A",letterSpacing:"1px",marginTop:"2px"}}>{l}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ── SCHEDULE PAGE ── */
+/* ── MUSCLE PICKER — shown when day has multiple muscles ── */
+function MusclePicker({day, onSelect, onBack, onHome}){
+  return(
+    <div style={{maxWidth:"780px",margin:"0 auto",padding:"0 14px 90px",position:"relative",zIndex:1}}>
+      {/* Nav */}
+      <div style={{display:"flex",alignItems:"center",gap:"10px",padding:"16px 0 18px",borderBottom:"1px solid #0A1E2E",marginBottom:"28px"}}>
+        <button onClick={onBack} style={{display:"flex",alignItems:"center",gap:"6px",padding:"8px 16px",background:"transparent",border:"1px solid #0D2030",borderRadius:"20px",color:"#4A8FA8",fontSize:"11px",letterSpacing:"2px",cursor:"pointer",whiteSpace:"nowrap"}}>
+          ← BACK
+        </button>
+        <button onClick={onHome} style={{padding:"8px 12px",background:"transparent",border:"1px solid #0D2030",borderRadius:"20px",color:"#1A4060",fontSize:"11px",cursor:"pointer"}}>⌂</button>
+        <div style={{flex:1,textAlign:"center"}}>
+          <div style={{fontSize:"14px",fontWeight:"700",color:day.color,letterSpacing:"1px"}}>{day.emoji} {day.label.toUpperCase()}</div>
+        </div>
+        <div style={{width:"60px"}}/>
+      </div>
+
+      {/* Prompt */}
+      <div style={{textAlign:"center",marginBottom:"28px"}}>
+        <div style={{fontSize:"10px",letterSpacing:"4px",color:day.color,marginBottom:"8px"}}>CHOOSE YOUR FOCUS</div>
+        <div style={{fontSize:"13px",color:"#1A4060"}}>Which muscle group are you training today?</div>
+      </div>
+
+      {/* Muscle cards */}
+      <div style={{display:"flex",flexDirection:"column",gap:"12px"}}>
+        {day.muscles.map(m=>{
+          const muscle=W[m];
+          return(
+            <div key={m} onClick={()=>onSelect(m)}
+              style={{display:"flex",alignItems:"center",gap:"18px",padding:"22px 20px",background:"#030E18",border:`1.5px solid ${muscle.color}30`,borderRadius:"16px",cursor:"pointer",transition:"all .25s"}}>
+              <div style={{width:"48px",height:"48px",borderRadius:"12px",background:muscle.color+"18",border:`1.5px solid ${muscle.color}40`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"22px",flexShrink:0}}>
+                {m==="shoulders"?"🏔️":m==="biceps"?"💪":m==="triceps"?"🔱":"🏋️"}
+              </div>
+              <div style={{flex:1}}>
+                <div style={{fontSize:"18px",fontWeight:"800",color:muscle.color,letterSpacing:"1px",marginBottom:"4px"}}>{muscle.label}</div>
+                <div style={{fontSize:"10px",color:"#1A4060",letterSpacing:"1px"}}>{muscle.routines.length} ROUTINES · {muscle.routines.reduce((a,r)=>a+r.exercises.length,0)} EXERCISES</div>
+              </div>
+              <div style={{fontSize:"20px",color:muscle.color+"60"}}>›</div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function SchedulePage({name,onSelectDay,onHome}){
+  const today=new Date().getDay();
+  return(
+    <div style={{maxWidth:"780px",margin:"0 auto",padding:"0 14px 90px",position:"relative",zIndex:1}}>
+      <div style={{display:"flex",alignItems:"center",gap:"10px",padding:"16px 0 18px",borderBottom:"1px solid #0A1E2E",marginBottom:"22px"}}>
+        <button onClick={onHome} style={{display:"flex",alignItems:"center",gap:"6px",padding:"8px 16px",background:"transparent",border:"1px solid #0D2030",borderRadius:"20px",color:"#4A8FA8",fontSize:"11px",letterSpacing:"2px",cursor:"pointer",whiteSpace:"nowrap"}}>
+          ⌂ HOME
+        </button>
+        <div style={{flex:1,textAlign:"center"}}>
+          <div style={{fontSize:"14px",fontWeight:"700",color:"#1E90FF",letterSpacing:"1px"}}>{name.toUpperCase()}'S ROUTINE</div>
+        </div>
+        <div style={{width:"72px"}}/>
+      </div>
+
+      <div style={{fontSize:"10px",letterSpacing:"4px",color:"#1E90FF",marginBottom:"14px",textAlign:"center"}}>YOUR WEEKLY SPLIT</div>
+      <div style={{display:"flex",flexDirection:"column",gap:"9px"}}>
+        {[1,2,3,5,6].map(d=>{
+          const day=SPLIT[d];
+          const isToday=today===d;
+          const tc=day.color;
+          return(
+            <div key={d} onClick={()=>onSelectDay(d)}
+              style={{display:"flex",alignItems:"center",gap:"14px",padding:"18px",background:isToday?tc+"14":"#030E18",border:isToday?`1.5px solid ${tc}`:"1.5px solid #0A1E2E",borderRadius:"14px",cursor:"pointer",transition:"all .25s",position:"relative",overflow:"hidden"}}>
+              {isToday&&<div style={{position:"absolute",left:0,top:0,bottom:0,width:"4px",background:tc,borderRadius:"4px 0 0 4px"}}/>}
+              <div style={{minWidth:"52px",textAlign:"center"}}>
+                <div style={{fontSize:"11px",letterSpacing:"2px",color:isToday?tc:"#1A4060",fontWeight:isToday?"700":"400"}}>{day.short}</div>
+                {isToday&&<div style={{fontSize:"8px",letterSpacing:"1px",color:tc,marginTop:"3px",animation:"glow 2s ease-in-out infinite"}}>TODAY</div>}
+              </div>
+              <div style={{fontSize:"22px"}}>{day.emoji}</div>
+              <div style={{flex:1}}>
+                <div style={{fontSize:"14px",fontWeight:"600",color:isToday?tc:"#D0D8E0"}}>{day.muscles.map(m=>W[m].label).join(" + ")}</div>
+                <div style={{fontSize:"10px",color:"#1A4060",marginTop:"3px"}}>{day.muscles.length>1?"Upper body day — 3 muscle groups":"3 routines available"}</div>
+              </div>
+              <div style={{fontSize:"16px",color:isToday?tc:"#0D3A50"}}>›</div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/* ── WORKOUT VIEW ── */
+function WorkoutView({muscle,onBack,onHome,log,setLog,done,setDone}){
+  const [routine,setRoutine]=useState(0);
+  const [expanded,setExpanded]=useState(null);
+  const [timer,setTimer]=useState(null);
+  const [showLog,setShowLog]=useState(false);
+  const [modal,setModal]=useState(null);
+  const M=W[muscle],R=M.routines[routine],c=M.color,a=M.accent;
+
+  const saveSet=(w,r)=>{
+    const now=new Date();
+    setLog(l=>[...l,{exercise:modal.exercise,setNum:modal.setNum,weight:w,reps:r,time:now.toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"})}]);
+    setDone(d=>({...d,[`${muscle}-${routine}-${modal.ei}-${modal.setNum}`]:true}));
+    setModal(null);
+  };
+
+  return(
+    <div style={{maxWidth:"780px",margin:"0 auto",padding:"0 14px 90px",position:"relative",zIndex:1}}>
+      {/* Top Nav — 3 buttons: ← BACK | MUSCLE LABEL | LOG */}
+      <div style={{display:"flex",alignItems:"center",gap:"8px",padding:"16px 0 18px",borderBottom:`1px solid #0A1E2E`,marginBottom:"18px"}}>
+        <button onClick={onBack}
+          style={{display:"flex",alignItems:"center",gap:"5px",padding:"8px 14px",background:"transparent",border:"1px solid #0D2030",borderRadius:"20px",color:"#4A8FA8",fontSize:"11px",letterSpacing:"2px",cursor:"pointer",whiteSpace:"nowrap"}}>
+          ← BACK
+        </button>
+        <button onClick={onHome}
+          style={{padding:"8px 12px",background:"transparent",border:"1px solid #0D2030",borderRadius:"20px",color:"#1A4060",fontSize:"11px",letterSpacing:"1px",cursor:"pointer",whiteSpace:"nowrap"}}>
+          ⌂
+        </button>
+        <div style={{flex:1,textAlign:"center"}}>
+          <div style={{fontSize:"15px",fontWeight:"700",color:c,letterSpacing:"1px"}}>{M.label}</div>
+        </div>
+        <button onClick={()=>setShowLog(true)} style={{padding:"8px 14px",background:"transparent",border:`1px solid ${c}35`,borderRadius:"20px",color:c+"BB",fontSize:"10px",letterSpacing:"2px",cursor:"pointer",whiteSpace:"nowrap"}}>
+          ◎{log.length>0?` ${log.length}`:""}
+        </button>
+      </div>
+
+      {/* Routine Tabs */}
+      <div style={{display:"flex",gap:"8px",marginBottom:"16px"}}>
+        {M.routines.map((r,i)=>(
+          <button key={i} onClick={()=>{setRoutine(i);setExpanded(null);}}
+            style={{flex:1,padding:"12px 8px",border:routine===i?`1.5px solid ${c}`:"1.5px solid #0D2030",borderRadius:"10px",background:routine===i?c+"12":"#030E18",cursor:"pointer",transition:"all .25s",textAlign:"center"}}>
+            <div style={{fontSize:"11px",fontWeight:"600",color:routine===i?c:"#2A6080",marginBottom:"3px"}}>{r.name}</div>
+            <div style={{fontSize:"9px",letterSpacing:"2px",color:LC[r.level]}}>{r.level}</div>
+          </button>
+        ))}
+      </div>
+
+      {/* Stats Bar */}
+      <div style={{display:"flex",gap:"10px",marginBottom:"14px",padding:"12px 16px",background:"#030E18",border:"1px solid #0D2030",borderRadius:"12px"}}>
+        {[["DURATION",R.duration],["EXERCISES",R.exercises.length],["LEVEL",R.level]].map(([l,v])=>(
+          <div key={l} style={{flex:1,textAlign:"center"}}>
+            <div style={{fontSize:"9px",letterSpacing:"3px",color:"#0D3A50",marginBottom:"3px"}}>{l}</div>
+            <div style={{fontSize:"14px",fontWeight:"700",color:c}}>{v}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Exercises */}
+      <div style={{display:"flex",flexDirection:"column",gap:"8px"}}>
+        {R.exercises.map((ex,i)=>{
+          const open=expanded===i;
+          const sN=parseInt(ex.sets)||4;
+          const logged=[...Array(sN)].filter((_,s)=>done[`${muscle}-${routine}-${i}-${s+1}`]).length;
+          return(
+            <div key={i} style={{border:open?`1.5px solid ${c}40`:"1.5px solid #0A1E2E",borderRadius:"12px",background:open?c+"07":"#030D16",transition:"all .25s",overflow:"hidden"}}>
+              <div onClick={()=>setExpanded(open?null:i)} style={{display:"flex",alignItems:"center",padding:"14px",gap:"12px",cursor:"pointer"}}>
+                <div style={{width:"28px",height:"28px",borderRadius:"50%",border:`1.5px solid ${c}44`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"10px",color:c,flexShrink:0,fontWeight:"700"}}>
+                  {String(i+1).padStart(2,"0")}
+                </div>
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{fontWeight:"600",fontSize:"14px",color:"#E8E8F0",lineHeight:1.3}}>{ex.name}</div>
+                  <div style={{display:"flex",gap:"10px",marginTop:"3px",alignItems:"center"}}>
+                    <span style={{fontSize:"10px",color:"#1A4060"}}>⏱ {ex.mins} min</span>
+                    {logged>0&&<span style={{fontSize:"10px",color:"#00C896"}}>✓ {logged}/{sN} sets done</span>}
+                  </div>
+                </div>
+                <div style={{textAlign:"right",flexShrink:0,marginRight:"6px"}}>
+                  <div style={{fontSize:"12px",color:a,fontWeight:"600"}}>{ex.sets} × {ex.reps}</div>
+                  <div style={{fontSize:"10px",color:"#0D3A50",marginTop:"2px"}}>REST {Math.floor(ex.rest/60)>0?Math.floor(ex.rest/60)+"m":""}{ex.rest%60>0?ex.rest%60+"s":""}</div>
+                </div>
+                <div style={{fontSize:"10px",color:"#0D3A50",transition:"transform .25s",transform:open?"rotate(180deg)":"rotate(0deg)",flexShrink:0}}>▼</div>
+              </div>
+
+              {open&&(
+                <div style={{borderTop:`1px solid ${c}14`}} className="fu">
+                  <div style={{padding:"16px 14px 0"}}>
+                    <ExerciseImage name={ex.name} c={c}/>
+                    <EquipmentBadges name={ex.name} c={c}/>
+                    <div style={{marginTop:"16px",marginBottom:"4px"}}>
+                      <div style={{fontSize:"9px",letterSpacing:"3px",color:c,marginBottom:"8px",fontWeight:"600"}}>HOW TO PERFORM</div>
+                      <ol style={{paddingLeft:0,listStyle:"none",display:"flex",flexDirection:"column",gap:"6px"}}>
+                        {ex.steps.map((st,si)=>(
+                          <li key={si} style={{display:"flex",gap:"8px",alignItems:"flex-start"}}>
+                            <span style={{fontSize:"10px",color:c+"99",fontWeight:"700",flexShrink:0,marginTop:"2px",minWidth:"16px"}}>{si+1}.</span>
+                            <span style={{fontSize:"12px",color:"#4A8FA8",lineHeight:"1.55"}}>{st}</span>
+                          </li>
+                        ))}
+                      </ol>
+                    </div>
+                  </div>
+                  <div style={{display:"flex",gap:"8px",padding:"14px"}}>
+                    <button onClick={e=>{e.stopPropagation();setTimer({seconds:ex.rest,color:c});}}
+                      style={{flex:1,padding:"11px",background:"transparent",border:`1px solid ${c}35`,borderRadius:"10px",color:c+"BB",fontSize:"10px",letterSpacing:"2px",cursor:"pointer",fontWeight:"600"}}>
+                      ⏱ REST
+                    </button>
+                    <button onClick={e=>{
+                      e.stopPropagation();
+                      const next=[...Array(sN)].findIndex((_,s)=>!done[`${muscle}-${routine}-${i}-${s+1}`])+1;
+                      setModal({exercise:ex.name,setNum:next||sN,ei:i});
+                    }} style={{flex:2,padding:"11px",background:c+"18",border:`1.5px solid ${c}`,borderRadius:"10px",color:c,fontSize:"10px",letterSpacing:"2px",cursor:"pointer",fontWeight:"700"}}>
+                      ✓ LOG SET
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      <div style={{textAlign:"center",marginTop:"36px",color:"#0D2A3A",fontSize:"10px",letterSpacing:"3px"}}>TAP EXERCISE · LOG SETS · TRACK PROGRESS</div>
+      {timer&&<RestTimer seconds={timer.seconds} color={timer.color} onClose={()=>setTimer(null)}/>}
+      {showLog&&<LogPanel log={log} color={c} onClear={()=>setLog([])} onClose={()=>setShowLog(false)}/>}
+      {modal&&<SetModal exercise={modal.exercise} setNum={modal.setNum} color={c} onSave={saveSet} onClose={()=>setModal(null)}/>}
+    </div>
+  );
+}
+
+/* ── MAIN APP ── */
+function App(){
+  const [name,setName]=useState(()=>{
+    try{return localStorage.getItem("ezze_name")||"Athlete";}catch(e){return "Athlete";}
+  });
+  // views: "landing" | "schedule" | muscle key
+  const [view,setView]=useState("landing");
+  const [log,setLog]=useState([]);
+  const [done,setDone]=useState({});
+  const [prevView,setPrevView]=useState("schedule");
+
+  const today=new Date().getDay();
+  const bgColor=view==="landing"||view==="schedule"
+    ?(SPLIT[today]?.color||"#1E90FF")
+    :(W[view]?.color||"#1E90FF");
+
+  const saveName=n=>{
+    try{localStorage.setItem("ezze_name",n);}catch(e){}
+    setName(n);
+  };
+
+  const handleSelectDay=d=>{
+    const day=SPLIT[d];
+    if(!day) return;
+    if(day.muscles.length===1){
+      setPrevView("schedule");
+      setView(day.muscles[0]);
+    } else {
+      setView("picker_"+d);
+    }
+  };
+
+  return(
+    <div style={{minHeight:"100vh",background:"#020B12",color:"#E8E8F0",position:"relative",overflow:"hidden"}}>
+      {/* Grain */}
+      <div style={{position:"fixed",inset:0,opacity:.04,backgroundImage:`url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,pointerEvents:"none",zIndex:0}}/>
+      {/* Glow */}
+      <div style={{position:"fixed",top:"-200px",left:"50%",transform:"translateX(-50%)",width:"700px",height:"700px",background:`radial-gradient(circle,${bgColor}1A 0%,transparent 70%)`,pointerEvents:"none",zIndex:0,transition:"background .8s"}}/>
+
+      {view==="landing" && (
+        <LandingPage name={name} onEnter={()=>setView("schedule")} onChangeName={saveName}/>
+      )}
+      {view==="schedule" && (
+        <SchedulePage name={name} onSelectDay={handleSelectDay} onHome={()=>setView("landing")}/>
+      )}
+      {view.startsWith("picker_") && (()=>{
+        const d=parseInt(view.replace("picker_",""));
+        const day=SPLIT[d];
+        return <MusclePicker day={day} onSelect={m=>{setPrevView("picker_"+d);setView(m);}} onBack={()=>setView("schedule")} onHome={()=>setView("landing")}/>;
+      })()}
+      {view!=="landing" && view!=="schedule" && !view.startsWith("picker_") && (
+        <WorkoutView
+          muscle={view}
+          onBack={()=>setView(prevView)}
+          onHome={()=>setView("landing")}
+          log={log} setLog={setLog}
+          done={done} setDone={setDone}
+        />
+      )}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
