@@ -18,9 +18,12 @@
     @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
     @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
     @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+    @keyframes barGrow{from{width:0}to{width:var(--bar-w,100%)}}
     .fu{animation:fadeUp .35s ease forwards;}
     .skeleton{background:linear-gradient(90deg,#0A1E2E 25%,#0D2A3A 50%,#0A1E2E 75%);background-size:200% 100%;animation:shimmer 1.6s infinite;}
     button,input{font-family:inherit;-webkit-appearance:none;}
+    .cta-btn{transition:all .25s ease;}
+    .cta-btn:hover{box-shadow:0 0 20px rgba(80,160,255,0.6);transform:translateY(-2px);}
     input:focus{outline:none;}
   </style>
 </head>
@@ -134,7 +137,7 @@ const SPLIT = {
   2:{label:"Tuesday",  short:"TUE", emoji:"🏋️", muscles:["back"],                         color:"#00C896"},
   3:{label:"Wednesday",short:"WED", emoji:"🦵", muscles:["legs"],                         color:"#0AFFD4"},
   5:{label:"Friday",   short:"FRI", emoji:"🔥", muscles:["shoulders","biceps","triceps"],  color:"#4FC3F7"},
-  6:{label:"Saturday", short:"SAT", emoji:"⚡", muscles:["abs"],                          color:"#FF7B2C"},
+  6:{label:"Saturday", short:"SAT", emoji:"⚡", muscles:["abs"],                          color:"#4A9EBF"},
 };
 
 const EQ = {
@@ -302,7 +305,7 @@ const W={
       {name:"Plate Front Raise",sets:"3",reps:"15",rest:60,mins:8,steps:["Hold a weight plate with both hands at 3 and 9 o'clock.","Stand tall, arms hanging in front of your thighs.","Raise the plate directly forward to eye level.","Pause briefly at the top.","Lower slowly using a 3-second descent on every rep."]},
     ]},
   ]},
-  abs:{label:"ABS",color:"#FF7B2C",accent:"#FFAA70",routines:[
+  abs:{label:"ABS",color:"#4A9EBF",accent:"#7AC4DC",routines:[
     {name:"Core Crusher",level:"Beginner",duration:"25 min",exercises:[
       {name:"Crunches",sets:"3",reps:"15",rest:45,mins:6,steps:["Lie on your back, knees bent, feet flat on the floor.","Place hands behind your head — don't pull your neck.","Curl your upper back off the floor using your abs only.","Hold the peak contraction for 1 second at the top.","Lower back down slowly and repeat with control."]},
       {name:"Leg Raises",sets:"3",reps:"12",rest:45,mins:6,steps:["Lie flat, hands under your hips for lower-back support.","Keep legs straight or with a slight bend at the knees.","Raise both legs together up toward 90° using your abs.","Lower legs slowly without letting them touch the floor.","Keep your lower back pressed into the ground throughout."]},
@@ -534,74 +537,119 @@ function LandingPage({name, onEnter, onChangeName}){
     if(newName.trim()){onChangeName(newName.trim());setEditingName(false);}
   };
 
+  const doneDays=Object.keys(SPLIT).filter(d=>parseInt(d)<today).length;
+  const pct=Math.round(doneDays/Object.keys(SPLIT).length*100);
+
   return(
-    <div style={{minHeight:"100vh",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"40px 24px",position:"relative",zIndex:1,textAlign:"center"}}>
-      <div style={{fontSize:"9px",letterSpacing:"6px",color:"#1E4060",marginBottom:"20px",fontWeight:"600"}}>TRAINING SYSTEM V7</div>
+    <div style={{minHeight:"100vh",display:"flex",flexDirection:"column",alignItems:"center",padding:"env(safe-area-inset-top,40px) 20px env(safe-area-inset-bottom,24px)",position:"relative",zIndex:1,textAlign:"center",overflowY:"auto"}}>
 
-      <h1 style={{fontSize:"clamp(52px,14vw,96px)",fontWeight:"900",letterSpacing:"-3px",lineHeight:.95,marginBottom:"4px",background:"linear-gradient(160deg,#ffffff 0%,#aaccee 40%,#1E90FF 100%)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>
-        EZZE'S
-      </h1>
-      <h1 style={{fontSize:"clamp(52px,14vw,96px)",fontWeight:"900",letterSpacing:"-3px",lineHeight:.95,marginBottom:"28px",background:"linear-gradient(160deg,#1E90FF 0%,#72B8FF 60%,#ffffff 100%)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>
-        ARK
-      </h1>
+      {/* Top label */}
+      <div style={{fontSize:"8px",letterSpacing:"6px",color:"#1E4060",marginTop:"32px",marginBottom:"16px",fontWeight:"600",fontFamily:"'Courier New',monospace"}}>TRAINING SYSTEM · V19</div>
 
-      {/* Name display / edit */}
-      <div style={{marginBottom:"28px"}}>
-        {editingName?(
-          <div style={{display:"flex",gap:"8px",alignItems:"center",justifyContent:"center"}} className="fu">
-            <input value={newName} onChange={e=>setNewName(e.target.value)}
-              onKeyDown={e=>e.key==="Enter"&&saveName()}
-              autoFocus
-              style={{background:"#030E18",border:"1.5px solid #1E90FF50",borderRadius:"10px",padding:"10px 14px",color:"#E0E8F0",fontSize:"15px",fontFamily:"inherit",textAlign:"center",width:"180px"}}/>
-            <button onClick={saveName} style={{padding:"10px 16px",background:"#1E90FF22",border:"1.5px solid #1E90FF",borderRadius:"10px",color:"#1E90FF",fontSize:"11px",letterSpacing:"2px",cursor:"pointer",fontWeight:"700"}}>SAVE</button>
-            <button onClick={()=>{setEditingName(false);setNewName(name);}} style={{padding:"10px 12px",background:"transparent",border:"1px solid #0D2030",borderRadius:"10px",color:"#333",fontSize:"11px",cursor:"pointer"}}>✕</button>
-          </div>
-        ):(
-          <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:"10px"}}>
-            <span style={{fontSize:"14px",color:"#2A6080",letterSpacing:"2px",fontWeight:"600"}}>
-              {name==="Athlete"?"WHO ARE YOU?":name.toUpperCase()}
-            </span>
-            <button onClick={()=>setEditingName(true)}
-              style={{padding:"5px 12px",background:"transparent",border:"1px solid #1E4060",borderRadius:"20px",color:"#1E4060",fontSize:"9px",letterSpacing:"2px",cursor:"pointer",transition:"all .2s"}}>
-              ✎ CHANGE
-            </button>
-          </div>
-        )}
+      {/* Hero Title */}
+      <div style={{marginBottom:"4px"}}>
+        <h1 style={{fontFamily:"'Times New Roman','Times',serif",fontSize:"clamp(46px,13vw,100px)",fontWeight:"900",letterSpacing:"4px",lineHeight:.92,color:"transparent",background:"linear-gradient(160deg,#E8DCC8 0%,#B8A070 50%,#6A5A3A 100%)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>
+          EZZE'S
+        </h1>
+        <h1 style={{fontFamily:"'Times New Roman','Times',serif",fontSize:"clamp(46px,13vw,100px)",fontWeight:"900",letterSpacing:"4px",lineHeight:.92,color:"transparent",background:"linear-gradient(160deg,#6A5A3A 0%,#B8A070 50%,#E8DCC8 100%)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>
+          ARK
+        </h1>
       </div>
 
-      {/* Motivational quote */}
-      <div style={{maxWidth:"300px",marginBottom:"36px",padding:"18px 20px",background:"#030E18",border:"1px solid #1E90FF18",borderRadius:"12px"}}>
-        <div style={{fontSize:"9px",letterSpacing:"3px",color:"#1E90FF",marginBottom:"10px",opacity:.6}}>WORDS TO LIVE BY</div>
-        <p style={{fontSize:"13px",color:"#4A7A90",lineHeight:"1.75",fontStyle:"italic"}}>
+      {/* Divider */}
+      <div style={{width:"40px",height:"1px",background:"#1E4060",margin:"14px auto 20px",opacity:.5}}/>
+
+      {/* Name input */}
+      <div style={{width:"100%",maxWidth:"340px",marginBottom:"16px",backdropFilter:"blur(10px)",background:"rgba(255,255,255,0.05)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:"14px",padding:"14px 14px 12px"}}>
+        <div style={{fontSize:"8px",letterSpacing:"3px",color:"#1E90FF",marginBottom:"8px",textAlign:"left",fontFamily:"'Courier New',monospace",opacity:.7}}>ENTER YOUR NAME</div>
+        <div style={{display:"flex",borderRadius:"10px",overflow:"hidden",border:"1.5px solid #1E90FF35"}}>
+          <input
+            value={newName}
+            onChange={e=>setNewName(e.target.value)}
+            onKeyDown={e=>e.key==="Enter"&&saveName()}
+            placeholder={name==="Athlete"?"Your name...":name}
+            style={{flex:1,background:"rgba(255,255,255,0.04)",border:"none",padding:"11px 13px",color:"#E0E8F0",fontSize:"15px",fontFamily:"inherit",letterSpacing:"1px",minWidth:0}}
+          />
+          <button onClick={saveName}
+            style={{padding:"11px 16px",background:"#1E90FF22",border:"none",borderLeft:"1px solid #1E90FF35",color:"#1E90FF",fontSize:"10px",letterSpacing:"2px",cursor:"pointer",fontFamily:"'Courier New',monospace",whiteSpace:"nowrap",fontWeight:"700",flexShrink:0}}>
+            OK ✓
+          </button>
+        </div>
+        {name!=="Athlete"&&<div style={{marginTop:"7px",textAlign:"left",fontSize:"11px",color:"#1A4060",fontStyle:"italic"}}>Welcome back, {name}.</div>}
+      </div>
+
+      {/* Quote card */}
+      <div style={{width:"100%",maxWidth:"340px",marginBottom:"16px",padding:"14px 18px",backdropFilter:"blur(10px)",background:"rgba(255,255,255,0.02)",border:"1px solid rgba(255,255,255,0.06)",borderRadius:"12px",opacity:.7}}>
+        <div style={{fontSize:"8px",letterSpacing:"3px",color:"#1E90FF",marginBottom:"8px",opacity:.6,fontFamily:"'Courier New',monospace"}}>WORDS TO LIVE BY</div>
+        <p style={{fontSize:"12px",color:"#4A7A90",lineHeight:"1.7",fontStyle:"italic"}}>
           "We must all suffer one of two things: the pain of discipline or the pain of regret."
         </p>
-        <p style={{fontSize:"10px",color:"#1E4060",marginTop:"10px",letterSpacing:"2px"}}>— JIM ROHN</p>
+        <p style={{fontSize:"9px",color:"#1E4060",marginTop:"8px",letterSpacing:"2px",fontFamily:"'Courier New',monospace"}}>— JIM ROHN</p>
+      </div>
+
+      {/* Week Progress */}
+      <div style={{width:"100%",maxWidth:"340px",marginBottom:"16px",padding:"14px",background:"rgba(255,255,255,0.03)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:"12px",backdropFilter:"blur(10px)"}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"10px"}}>
+          <div style={{fontSize:"8px",letterSpacing:"3px",color:"#5BB8FF",fontFamily:"'Courier New',monospace",fontWeight:"700"}}>WEEK PROGRESS</div>
+          <div style={{fontSize:"11px",color:"#5BB8FF",fontFamily:"'Courier New',monospace",fontWeight:"700"}}>{pct}%</div>
+        </div>
+        <div style={{width:"100%",height:"12px",background:"#071520",borderRadius:"6px",overflow:"hidden",boxShadow:"inset 0 1px 3px rgba(0,0,0,.5)"}}>
+          <div style={{height:"100%",width:`${pct}%`,background:"linear-gradient(90deg,#1060CC,#1E90FF,#60C8FF)",borderRadius:"6px",boxShadow:"0 0 12px rgba(30,144,255,0.7)",animation:"barGrow .9s cubic-bezier(.22,1,.36,1) forwards"}}/>
+        </div>
+        <div style={{display:"flex",justifyContent:"space-between",marginTop:"10px"}}>
+          {Object.entries(SPLIT).map(([d,day])=>{
+            const past=parseInt(d)<today, isNow=parseInt(d)===today;
+            return(
+              <div key={d} style={{textAlign:"center"}}>
+                <div style={{fontSize:"7px",fontFamily:"'Courier New',monospace",color:isNow?"#5BB8FF":past?"#2A6080":"#0D2030",fontWeight:isNow?"700":"400"}}>{day.short}</div>
+                <div style={{width:"8px",height:"8px",borderRadius:"50%",background:isNow?"#1E90FF":past?"#1E4060":"#071520",margin:"4px auto 0",boxShadow:isNow?"0 0 10px #1E90FF,0 0 4px #60C8FF":"",border:isNow?"1.5px solid #5BB8FF":past?"1px solid #1E4060":"1px solid #0D2030"}}/>
+              </div>
+            );
+          })}
+        </div>
+        <div style={{marginTop:"8px",fontSize:"8px",color:"#0D3A50",fontFamily:"'Courier New',monospace",textAlign:"center",letterSpacing:"1px"}}>
+          {doneDays} of {Object.keys(SPLIT).length} training days complete
+        </div>
       </div>
 
       {/* Today pill */}
       {todayDay&&(
-        <div style={{padding:"10px 20px",background:"#1E90FF10",border:"1px solid #1E90FF30",borderRadius:"30px",marginBottom:"36px",display:"flex",alignItems:"center",gap:"8px"}}>
-          <span style={{fontSize:"14px"}}>{todayDay.emoji}</span>
-          <span style={{fontSize:"11px",color:"#3A7090",letterSpacing:"1px"}}>TODAY — {todayDay.muscles.map(m=>W[m].label).join(" + ")}</span>
+        <div style={{padding:"9px 18px",background:"#1E90FF10",border:"1px solid #1E90FF30",borderRadius:"30px",marginBottom:"20px",display:"flex",alignItems:"center",gap:"8px"}}>
+          <span style={{fontSize:"13px"}}>{todayDay.emoji}</span>
+          <span style={{fontSize:"10px",color:"#3A7090",letterSpacing:"1px",fontFamily:"'Courier New',monospace"}}>TODAY — {todayDay.muscles.map(m=>W[m].label).join(" + ")}</span>
         </div>
       )}
 
-      {/* Enter */}
-      <button onClick={onEnter}
-        style={{padding:"18px 52px",background:"linear-gradient(135deg,#1E90FF22,#1E90FF44)",border:"1.5px solid #1E90FF",borderRadius:"14px",color:"#fff",fontSize:"13px",letterSpacing:"4px",cursor:"pointer",fontWeight:"700",width:"100%",maxWidth:"300px",marginBottom:"16px",transition:"all .2s"}}>
-        ENTER THE ARK →
-      </button>
-      <div style={{fontSize:"10px",color:"#0D2A3A",letterSpacing:"2px"}}>TAP TO VIEW YOUR WEEKLY SPLIT</div>
-
-      {/* Stats */}
-      <div style={{position:"absolute",bottom:"32px",left:0,right:0,display:"flex",justifyContent:"center",gap:"32px"}}>
-        {[["21","ROUTINES"],["7","MUSCLE GROUPS"],["5","TRAINING DAYS"]].map(([n,l])=>(
-          <div key={l} style={{textAlign:"center"}}>
-            <div style={{fontSize:"18px",fontWeight:"800",color:"#1E90FF",letterSpacing:"-1px"}}>{n}</div>
-            <div style={{fontSize:"8px",color:"#0D2A3A",letterSpacing:"1px",marginTop:"2px"}}>{l}</div>
-          </div>
-        ))}
+      {/* CTA */}
+      <div style={{width:"100%",maxWidth:"340px",marginTop:"8px",marginBottom:"20px"}}>
+        <button onClick={onEnter} className="cta-btn"
+          style={{padding:"18px 20px",background:"linear-gradient(135deg,#1E90FF22,#1E90FF44)",border:"1.5px solid #1E90FF",borderRadius:"14px",color:"#fff",cursor:"pointer",fontWeight:"700",width:"100%",display:"flex",flexDirection:"column",alignItems:"center",gap:"4px"}}>
+          <span style={{fontSize:"13px",letterSpacing:"4px",fontFamily:"'Courier New',monospace"}}>ENTER THE ARK</span>
+          <span style={{fontSize:"11px",letterSpacing:"1px",color:"#72B8FF",fontWeight:"400"}}>Start today's training</span>
+        </button>
       </div>
+
+      {/* Stat Cards */}
+      <div style={{width:"100%",maxWidth:"340px",marginBottom:"32px",borderTop:"1px solid #0A1E2E",paddingTop:"20px"}}>
+        <div style={{display:"flex",gap:"10px"}}>
+          {[
+            {n:"21",l:"ROUTINES",icon:"📋",desc:"3 per muscle"},
+            {n:"7", l:"MUSCLES", icon:"💪",desc:"Full body"},
+            {n:"5", l:"DAYS",    icon:"📅",desc:"Per week"},
+          ].map(({n,l,icon,desc})=>(
+            <div key={l}
+              style={{flex:1,textAlign:"center",padding:"12px 6px",background:"rgba(255,255,255,0.03)",border:"1px solid #0D2030",borderRadius:"12px",cursor:"pointer",transition:"all .25s",backdropFilter:"blur(10px)"}}
+              onMouseEnter={e=>{e.currentTarget.style.border="1px solid #1E90FF50";e.currentTarget.style.background="rgba(30,144,255,0.08)";}}
+              onMouseLeave={e=>{e.currentTarget.style.border="1px solid #0D2030";e.currentTarget.style.background="rgba(255,255,255,0.03)";}}>
+              <div style={{fontSize:"15px",marginBottom:"4px"}}>{icon}</div>
+              <div style={{fontSize:"20px",fontWeight:"800",color:"#1E90FF",letterSpacing:"-1px",lineHeight:1}}>{n}</div>
+              <div style={{fontSize:"7px",color:"#1A4060",letterSpacing:"1px",marginTop:"4px",fontFamily:"'Courier New',monospace"}}>{l}</div>
+              <div style={{fontSize:"8px",color:"#0D2A3A",marginTop:"3px",fontStyle:"italic"}}>{desc}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
     </div>
   );
 }
@@ -761,7 +809,7 @@ function WorkoutView({muscle,onBack,onHome,log,setLog,done,setDone}){
             <div key={i} style={{border:open?`1.5px solid ${c}40`:"1.5px solid #0A1E2E",borderRadius:"12px",background:open?c+"07":"#030D16",transition:"all .25s",overflow:"hidden"}}>
               <div onClick={()=>setExpanded(open?null:i)} style={{display:"flex",alignItems:"center",padding:"14px",gap:"12px",cursor:"pointer"}}>
                 <div style={{width:"28px",height:"28px",borderRadius:"50%",border:`1.5px solid ${c}44`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"10px",color:c,flexShrink:0,fontWeight:"700"}}>
-                  {String(i+1).padStart(2,"0")}
+                  {i+1}
                 </div>
                 <div style={{flex:1,minWidth:0}}>
                   <div style={{fontWeight:"600",fontSize:"14px",color:"#E8E8F0",lineHeight:1.3}}>{ex.name}</div>
